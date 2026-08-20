@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Facturation — Cabinet vétérinaire</title>
+
+<!-- PWA : icône, manifeste, mode plein écran -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#1F6F5C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Facturation Véto">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F6F8;
+    --surface:#FFFFFF;
+    --border:#E4E7E6;
+    --ink:#142B27;
+    --ink-soft:#5B6B68;
+    --ink-faint:#8A9794;
+    --primary:#1F6F5C;
+    --primary-dark:#175247;
+    --primary-soft:#E8F2EF;
+    --danger:#B3261E;
+    --danger-soft:#FBEAE9;
+    --warn:#B08900;
+    --warn-soft:#FBF3DA;
+    --info:#2A5E8C;
+    --info-soft:#E9F1F9;
+    --shadow: 0 1px 2px rgba(20,43,39,0.04), 0 2px 8px rgba(20,43,39,0.06);
+    --invoice-accent:#1F6F5C;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3, .brand, .btn, nav.tabs button{ font-family:'Manrope', sans-serif; }
+  .mono{ font-family:'IBM Plex Mono', monospace; font-variant-numeric: tabular-nums; }
+
+  header{
+    background:var(--surface);
+    border-bottom:1px solid var(--border);
+    padding:0.9rem 1.2rem;
+    display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
+    position:sticky; top:0; z-index:10;
+  }
+  .brand{ display:flex; align-items:center; gap:0.6rem; }
+  .brand .logo{
+    width:2.1rem; height:2.1rem; border-radius:8px; background:var(--primary);
+    display:flex; align-items:center; justify-content:center; color:#fff; font-size:1.1rem; flex-shrink:0;
+    overflow:hidden;
+  }
+  .brand .logo img{ width:100%; height:100%; object-fit:cover; }
+  .brand button.name-btn{
+    font-family:'Manrope', sans-serif; font-weight:700; font-size:1.05rem; color:var(--ink);
+    background:none; border:none; cursor:pointer; padding:0; display:flex; align-items:center; gap:0.4rem;
+  }
+  .brand button.name-btn:hover{ color:var(--primary); }
+  .brand button.name-btn svg{ opacity:0; width:14px; height:14px; transition:opacity .15s; }
+  .brand button.name-btn:hover svg{ opacity:0.6; }
+
+  .header-right{ display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap; }
+
+  .session-pill{ display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:var(--ink-soft); }
+  .session-pill select{
+    font-family:'Inter', sans-serif; font-size:0.8rem; padding:0.35rem 0.5rem; border-radius:7px;
+    border:1px solid var(--border); background:var(--bg); color:var(--ink); max-width:150px;
+  }
+  .role-badge{
+    font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em;
+    padding:0.2rem 0.5rem; border-radius:5px; background:var(--primary-soft); color:var(--primary-dark);
+  }
+
+  nav.tabs{ display:flex; gap:0.3rem; background:var(--bg); padding:0.3rem; border-radius:10px; }
+  nav.tabs button{
+    font-size:0.85rem; font-weight:600;
+    background:transparent; border:none; padding:0.5rem 0.9rem; border-radius:7px;
+    cursor:pointer; color:var(--ink-soft); display:flex; align-items:center; gap:0.4rem;
+    transition:background .15s, color .15s;
+  }
+  nav.tabs button.active{ background:var(--surface); color:var(--ink); box-shadow:var(--shadow); }
+  nav.tabs button svg{ width:15px; height:15px; }
+  nav.tabs button[disabled]{ opacity:0.4; cursor:not-allowed; }
+
+  main{ padding:1.6rem 1.2rem 3rem; max-width:1180px; margin:0 auto; }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:1.4rem; align-items:start; }
+  @media(max-width:860px){ .grid{ grid-template-columns:1fr; } }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    box-shadow:var(--shadow);
+    padding:1.5rem;
+  }
+  .panel + .panel{ margin-top:1.2rem; }
+  .panel h2{ font-size:1rem; margin:0 0 1rem; }
+  .section-title{ font-size:0.95rem; font-weight:700; margin:0 0 0.2rem; display:flex; align-items:center; justify-content:space-between; gap:0.6rem; }
+  .section-sub{ font-size:0.8rem; color:var(--ink-soft); margin:0 0 1.1rem; }
+
+  label{ display:block; font-size:0.75rem; font-weight:600; color:var(--ink-soft); margin:1rem 0 0.35rem; }
+  label:first-of-type{ margin-top:0; }
+  input[type=text], input[type=number], input[type=password], input[type=file], textarea, select{
+    width:100%; font-family:'Inter', sans-serif; font-size:0.92rem;
+    padding:0.6rem 0.7rem; border:1px solid var(--border); border-radius:8px; background:#fff;
+    color:var(--ink);
+  }
+  input:focus, textarea:focus, select:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px var(--primary-soft); }
+  textarea{ min-height:7rem; resize:vertical; font-size:0.95rem; line-height:1.55; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:0.8rem; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.8rem; }
+  @media(max-width:520px){ .row3{ grid-template-columns:1fr; } }
+
+  .desc-wrap{ position:relative; }
+  .mic-btn{
+    position:absolute; right:0.5rem; bottom:0.5rem;
+    width:2.2rem; height:2.2rem; border-radius:50%;
+    background:var(--bg); border:1px solid var(--border); cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    transition:background 0.15s, border-color .15s;
+  }
+  .mic-btn:hover{ border-color:var(--primary); }
+  .mic-btn.recording{ background:var(--danger-soft); border-color:var(--danger); animation:pulse 1.2s infinite; }
+  @keyframes pulse{ 0%{box-shadow:0 0 0 0 rgba(179,38,30,0.35);} 70%{box-shadow:0 0 0 8px rgba(179,38,30,0);} 100%{box-shadow:0 0 0 0 rgba(179,38,30,0);} }
+  .mic-btn svg{ width:1rem; height:1rem; stroke:var(--ink-soft); }
+  .mic-btn.recording svg{ stroke:var(--danger); }
+
+  .hint{ font-size:0.76rem; color:var(--ink-faint); margin-top:0.5rem; line-height:1.4; }
+
+  .btn{
+    font-size:0.85rem; font-weight:600; padding:0.65rem 1.1rem; border-radius:8px;
+    border:1px solid var(--border); background:var(--surface); color:var(--ink); cursor:pointer;
+    display:inline-flex; align-items:center; gap:0.45rem; transition:background .15s, border-color .15s, transform .05s;
+  }
+  .btn svg{ width:15px; height:15px; }
+  .btn:hover{ border-color:var(--primary); }
+  .btn:active{ transform:translateY(1px); }
+  .btn.primary{ background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn.primary:hover{ background:var(--primary-dark); }
+  .btn.danger{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .btn.block{ width:100%; justify-content:center; }
+  .btn.lg{ padding:0.85rem 1.4rem; font-size:0.92rem; }
+  .btn.sm{ padding:0.4rem 0.7rem; font-size:0.78rem; }
+  .btn:disabled{ opacity:0.55; cursor:wait; }
+
+  .icon-btn{ background:none; border:none; cursor:pointer; padding:0.35rem; border-radius:6px; color:var(--ink-soft); display:inline-flex; }
+  .icon-btn svg{ width:16px; height:16px; }
+  .icon-btn:hover{ background:var(--bg); color:var(--ink); }
+  .icon-btn.danger:hover{ background:var(--danger-soft); color:var(--danger); }
+
+  .error-box{ background:var(--danger-soft); border:1px solid #f0c6c3; color:var(--danger); padding:0.7rem 0.9rem; border-radius:8px; font-size:0.85rem; margin-top:1rem; }
+  .info-box{ background:var(--info-soft); border:1px solid #c7dcee; color:var(--info); padding:0.7rem 0.9rem; border-radius:8px; font-size:0.85rem; margin-top:1rem; }
+
+  .cta-zone{ margin-top:1.6rem; }
+
+  /* Invoice preview */
+  .invoice-head{ display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding-bottom:1rem; border-bottom:2px solid var(--invoice-accent, var(--border)); margin-bottom:1rem; }
+  .invoice-head-left{ display:flex; gap:0.8rem; align-items:flex-start; }
+  .invoice-logo{ width:2.6rem; height:2.6rem; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--primary-soft); display:flex; align-items:center; justify-content:center; }
+  .invoice-logo img{ width:100%; height:100%; object-fit:cover; }
+  .invoice-head h2{ margin:0 0 0.2rem; font-size:1.05rem; }
+  .invoice-head .meta{ font-size:0.78rem; color:var(--ink-soft); line-height:1.5; }
+  .invoice-num{ text-align:right; font-size:0.8rem; color:var(--ink-soft); }
+  .invoice-num .n{ font-size:0.95rem; font-weight:700; color:var(--invoice-accent, var(--ink)); }
+  .invoice table{ width:100%; border-collapse:collapse; margin-top:0.6rem; }
+  .invoice th{ text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.05em; font-weight:700; color:var(--ink-faint); border-bottom:1px solid var(--border); padding:0.4rem 0.3rem; }
+  .invoice td{ padding:0.55rem 0.3rem; border-bottom:1px solid var(--bg); font-size:0.87rem; }
+  .invoice td.num, .invoice th.num{ text-align:right; }
+  .off-catalog{ color:var(--warn); font-size:0.72rem; margin-left:0.3rem; }
+  .med-tag{ color:var(--info); font-size:0.72rem; margin-left:0.3rem; }
+  .totals{ margin-top:1rem; margin-left:auto; width:65%; min-width:240px; }
+  .totals div{ display:flex; justify-content:space-between; padding:0.3rem 0; font-size:0.87rem; color:var(--ink-soft); }
+  .totals .ttc{ font-weight:700; font-size:1.05rem; color:var(--ink); border-top:2px solid var(--invoice-accent, var(--border)); margin-top:0.4rem; padding-top:0.6rem; }
+  .totals .reste{ font-weight:700; font-size:0.98rem; color:var(--invoice-accent, var(--primary-dark)); }
+  .empty-state{ text-align:center; color:var(--ink-faint); padding:3rem 1rem; font-size:0.88rem; }
+  .invoice-footer-note{ margin-top:1.3rem; padding-top:1rem; border-top:1px dashed var(--border); font-size:0.76rem; color:var(--ink-faint); line-height:1.55; white-space:pre-line; }
+  .invoice-custom-fields{ font-size:0.76rem; color:var(--ink-faint); margin-top:0.3rem; }
+  table.client-table{ width:100%; border-collapse:collapse; }
+  table.client-table th{ text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); border-bottom:1px solid var(--border); padding:0.5rem 0.4rem; }
+  table.client-table td{ padding:0.65rem 0.4rem; border-bottom:1px solid var(--bg); font-size:0.87rem; vertical-align:top; }
+  table.client-table tr.clickable{ cursor:pointer; }
+  table.client-table tr.clickable:hover td{ background:var(--bg); }
+  .animal-chip{ display:inline-block; background:var(--bg); border-radius:6px; padding:0.15rem 0.5rem; font-size:0.76rem; margin:0.1rem 0.25rem 0.1rem 0; color:var(--ink-soft); }
+  .actions-row{ display:flex; gap:0.6rem; margin-top:1.3rem; flex-wrap:wrap; }
+
+  .status-tag{ font-size:0.7rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; padding:0.2rem 0.55rem; border-radius:5px; }
+  .status-valide{ background:var(--primary-soft); color:var(--primary-dark); }
+  .status-annulee{ background:var(--danger-soft); color:var(--danger); }
+  .status-remplacee{ background:var(--warn-soft); color:var(--warn); }
+  .status-avoir{ background:var(--info-soft); color:var(--info); }
+
+  /* Editable item rows (invoice edit mode) */
+  .item-edit-row{ display:grid; grid-template-columns:1fr 4.5rem 6rem 7.5rem 2rem; gap:0.4rem; align-items:center; margin-bottom:0.4rem; }
+  .item-edit-row input, .item-edit-row select{ padding:0.4rem 0.5rem; font-size:0.82rem; }
+  @media(max-width:700px){ .item-edit-row{ grid-template-columns:1fr 1fr; grid-auto-rows:auto; } }
+
+  /* Admin table */
+  table.tarif-table{ width:100%; border-collapse:collapse; }
+  table.tarif-table th{ text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); border-bottom:1px solid var(--border); padding:0.5rem 0.4rem; }
+  table.tarif-table td{ padding:0.65rem 0.4rem; border-bottom:1px solid var(--bg); font-size:0.9rem; vertical-align:top; }
+  table.tarif-table td.num{ text-align:right; }
+  table.tarif-table .actions-col{ width:80px; text-align:right; white-space:nowrap; }
+  table.tarif-table .variant-list{ font-size:0.74rem; color:var(--ink-soft); margin-top:0.2rem; }
+  table.tarif-table .cat-tag{ font-size:0.68rem; color:var(--ink-faint); }
+
+  .lock-note{ display:flex; align-items:center; gap:0.5rem; font-size:0.8rem; color:var(--ink-soft); background:var(--bg); padding:0.6rem 0.8rem; border-radius:8px; margin-bottom:1.2rem; }
+  .lock-note svg{ width:15px; height:15px; flex-shrink:0; }
+
+  /* History */
+  table.hist-table{ width:100%; border-collapse:collapse; }
+  table.hist-table th{ text-align:left; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em; color:var(--ink-faint); border-bottom:1px solid var(--border); padding:0.5rem 0.4rem; }
+  table.hist-table td{ padding:0.65rem 0.4rem; border-bottom:1px solid var(--bg); font-size:0.87rem; }
+  table.hist-table td.num{ text-align:right; font-weight:600; }
+  table.hist-table tr.clickable{ cursor:pointer; }
+  table.hist-table tr.clickable:hover td{ background:var(--bg); }
+
+  .clinic-code-box{ display:flex; align-items:center; gap:0.6rem; background:var(--bg); border-radius:8px; padding:0.7rem 0.9rem; }
+  .clinic-code-box .code{ font-size:1.1rem; font-weight:700; letter-spacing:0.08em; }
+
+  footer{ text-align:center; font-size:0.75rem; color:var(--ink-faint); padding:1.6rem; }
+
+  /* Modal */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,43,39,0.4); backdrop-filter:blur(1px);
+    display:flex; align-items:center; justify-content:center; z-index:100; padding:1rem;
+  }
+  .modal-box{
+    background:var(--surface); border-radius:12px; padding:1.5rem; width:100%; max-width:440px;
+    box-shadow:0 10px 40px rgba(20,43,39,0.25); max-height:90vh; overflow-y:auto;
+  }
+  .modal-box h3{ margin:0 0 1rem; font-size:1.02rem; }
+  .modal-actions{ display:flex; justify-content:flex-end; gap:0.6rem; margin-top:1.3rem; }
+  .modal-sub{ font-size:0.82rem; color:var(--ink-soft); margin:-0.5rem 0 1rem; line-height:1.45; }
+
+  .onboard-choices{ display:flex; flex-direction:column; gap:0.7rem; margin-top:0.5rem; }
+  .onboard-choice{
+    text-align:left; background:var(--bg); border:1px solid var(--border); border-radius:10px;
+    padding:0.9rem 1rem; cursor:pointer; font-family:'Inter', sans-serif;
+  }
+  .onboard-choice:hover{ border-color:var(--primary); background:var(--primary-soft); }
+  .onboard-choice .t{ font-weight:700; font-size:0.92rem; color:var(--ink); margin-bottom:0.15rem; }
+  .onboard-choice .d{ font-size:0.78rem; color:var(--ink-soft); }
+
+  .checkbox-row{ display:flex; align-items:flex-start; gap:0.5rem; margin-top:0.9rem; font-size:0.85rem; color:var(--ink); }
+  .checkbox-row input{ width:auto; margin-top:0.2rem; }
+
+  /* Toast */
+  .toast{
+    position:fixed; bottom:1.2rem; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:0.7rem 1.1rem; border-radius:8px; font-size:0.85rem;
+    opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; z-index:200; box-shadow:var(--shadow);
+    max-width:90vw; text-align:center;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.err{ background:var(--danger); }
+
+  @media print{
+    body{ background:#fff; }
+    header, nav.tabs, .panel.form-panel, footer, .actions-row, .cta-zone{ display:none !important; }
+    .grid{ grid-template-columns:1fr; }
+    .invoice{ border:none; box-shadow:none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo" id="clinicLogoBox">🐾</div>
+    <button class="name-btn" id="clinicNameBtn" onclick="editClinic()">
+      <span id="clinicTitle">Cabinet Vétérinaire</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+    </button>
+  </div>
+
+  <div class="header-right">
+    <div class="session-pill">
+      <span>Connecté(e) :</span>
+      <select id="sessionSelect" onchange="onSessionChange()"></select>
+      <span class="role-badge" id="roleBadge">—</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="fiche">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Nouvelle fiche
+      </button>
+      <button class="tab-btn" data-tab="tarifs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Administration
+      </button>
+      <button class="tab-btn" data-tab="clients">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Clients
+      </button>
+      <button class="tab-btn" data-tab="rappels">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Rappels
+        <span id="rappelsBadge" style="display:none;background:var(--danger);color:#fff;border-radius:10px;font-size:0.68rem;padding:0.05rem 0.4rem;margin-left:0.15rem;"></span>
+      </button>
+      <button class="tab-btn" data-tab="historique">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Historique
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- FICHE TAB -->
+  <section id="tab-fiche">
+    <div class="grid">
+      <div class="panel form-panel">
+        <div class="section-title">Nouvelle intervention</div>
+        <div class="section-sub">Renseigne le client, l'animal et ce qui a été fait.</div>
+
+        <label>Nom du propriétaire</label>
+        <input type="text" id="clientName" list="clientNamesList" placeholder="Ex : Mme Dupont" oninput="onClientNameInput()">
+        <datalist id="clientNamesList"></datalist>
+
+        <div class="row2">
+          <div>
+            <label>Nom de l'animal</label>
+            <input type="text" id="animalName" list="animalNamesList" placeholder="Ex : Rex" oninput="onAnimalNameInput()">
+            <datalist id="animalNamesList"></datalist>
+          </div>
+          <div>
+            <label>Espèce / race</label>
+            <input type="text" id="animalSpecies" placeholder="Ex : Chien - Labrador, 3 ans">
+          </div>
+        </div>
+
+        <label>Ce qui a été fait sur l'animal</label>
+        <div class="desc-wrap">
+          <textarea id="description" placeholder="Décris librement les actes réalisés : consultation, vaccin, soins, médicaments délivrés... Tu peux aussi utiliser le micro."></textarea>
+          <button class="mic-btn" id="micBtn" onclick="toggleMic()" title="Dicter au micro">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="hint" id="micHint">Le micro fonctionne mieux sur Chrome (PC et Android). Sur Safari/iOS, saisis le texte directement. Astuce : mentionne l'âge/la taille de l'animal si le tarif en dépend, et précise les médicaments délivrés.</div>
+
+        <div class="row2">
+          <div>
+            <label>Remise (%)</label>
+            <input type="number" id="remisePct" value="0" min="0" max="100" step="0.5">
+          </div>
+          <div>
+            <label>Acompte déjà versé (€)</label>
+            <input type="number" id="acompteVerse" value="0" min="0" step="0.01">
+          </div>
+        </div>
+
+        <div class="cta-zone">
+          <button class="btn primary lg block" id="stampBtn" onclick="generateInvoice()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+            Générer la facture
+          </button>
+        </div>
+        <div id="errorBox"></div>
+      </div>
+
+      <div class="panel invoice" id="invoicePanel">
+        <div class="empty-state">La facture apparaîtra ici une fois générée.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADMINISTRATION TAB -->
+  <section id="tab-tarifs" style="display:none;">
+
+    <div class="panel">
+      <div class="section-title">Code clinique</div>
+      <div class="section-sub">Ce code relie tous vos appareils (ordinateur, téléphone, collègues) sur les mêmes données. Ne le partage qu'avec ton équipe.</div>
+      <div class="clinic-code-box">
+        <span class="code mono" id="clinicCodeDisplay">——</span>
+        <button class="btn sm" onclick="copyClinicCode()">Copier</button>
+        <button class="btn sm" onclick="switchClinicCode()">Changer de cabinet</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Paramètres de facturation</div>
+      <div class="section-sub">Taux de TVA appliqué à toutes les factures.</div>
+      <label>Taux de TVA (%)</label>
+      <input type="number" id="tvaRate" style="max-width:140px;" value="20" onchange="saveClinicInfo()">
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Grille des prestations</div>
+      <div class="section-sub">Nom, prix et catégorie de chaque prestation — utilisés par l'IA pour générer une facture juste et cohérente. Tu peux ajouter des variantes de prix (ex : par taille ou par âge).</div>
+      <div id="tarifList"></div>
+      <div class="actions-row">
+        <button class="btn primary" onclick="openTarifModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter une prestation
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Personnalisation de la facture</div>
+      <div class="section-sub">Ce qui apparaît sur chaque facture générée : couleur, mentions en pied de page, champs additionnels (IBAN, n° TVA...).</div>
+
+      <label>Couleur d'accent</label>
+      <div style="display:flex;align-items:center;gap:0.7rem;">
+        <input type="color" id="accentColor" value="#1F6F5C" style="width:3.2rem;height:2.4rem;padding:0.2rem;">
+        <span class="hint" style="margin:0;">Utilisée pour le montant total, les bordures et les accents de la facture.</span>
+      </div>
+
+      <label>Texte de pied de facture</label>
+      <textarea id="footerText" placeholder="Ex : Conditions de paiement : à régler sous 30 jours. TVA non applicable, art. 293B du CGI." style="min-height:5rem;"></textarea>
+
+      <label>Champs additionnels (un par ligne, format "Libellé:Valeur")</label>
+      <textarea id="customFieldsText" placeholder="Ex :&#10;IBAN:FR76 1234 5678 9123&#10;N° TVA intracommunautaire:FR12345678900" style="min-height:5rem;"></textarea>
+
+      <div class="actions-row">
+        <button class="btn primary" onclick="saveInvoiceCustomization()">Enregistrer la personnalisation</button>
+      </div>
+    </div>
+
+    <div class="panel" id="usersPanel">
+      <div class="section-title">Utilisateurs</div>
+      <div class="section-sub">Ajoute les membres de l'équipe. Leur rôle détermine ce qu'ils peuvent modifier. Tant qu'aucun utilisateur n'est ajouté, l'accès reste complet pour tout le monde.</div>
+      <div id="usersList"></div>
+      <div class="actions-row">
+        <button class="btn primary" onclick="openUserModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter un utilisateur
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="section-title">Sécurité</div>
+      <div class="section-sub">Modifie le mot de passe qui protège cet onglet Administration.</div>
+      <div class="row2">
+        <input type="password" id="newAdminPass" placeholder="Nouveau mot de passe">
+        <button class="btn" onclick="changeAdminPassword()">Changer le mot de passe</button>
+      </div>
+      <div class="hint">Mot de passe par défaut : 1234 — pense à le changer.</div>
+      <div class="actions-row">
+        <button class="btn" onclick="lockAdmin()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Verrouiller l'accès administrateur
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CLIENTS TAB -->
+  <section id="tab-clients" style="display:none;">
+    <div class="panel">
+      <div class="section-title">
+        <span>Répertoire clients</span>
+        <button class="btn sm primary" onclick="openClientModal()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Ajouter un client
+        </button>
+      </div>
+      <div class="section-sub">Rempli automatiquement à chaque facture générée. Clique sur un client pour voir ses animaux ou ses factures.</div>
+      <input type="text" id="clientSearchInput" placeholder="Rechercher un client ou un animal..." oninput="renderClientsList()" style="margin-bottom:1rem;">
+      <div id="clientsList"><div class="empty-state">Aucun client pour l'instant — le répertoire se remplit automatiquement dès qu'une facture est générée.</div></div>
+    </div>
+  </section>
+
+  <!-- RAPPELS TAB -->
+  <section id="tab-rappels" style="display:none;">
+    <div class="panel">
+      <div class="section-title">Factures impayées</div>
+      <div class="section-sub">Factures valides avec un reste dû supérieur à 0€, triées des plus anciennes aux plus récentes.</div>
+      <div id="rappelsList"><div class="empty-state">Aucune relance à faire pour l'instant.</div></div>
+    </div>
+  </section>
+
+  <!-- HISTORIQUE TAB -->
+  <section id="tab-historique" style="display:none;">
+    <div class="panel">
+      <div class="section-title">
+        <span>Factures générées</span>
+        <button class="btn sm" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exporter en CSV
+        </button>
+      </div>
+      <div class="section-sub">Clique sur une facture pour la consulter, la modifier ou l'annuler.</div>
+      <input type="text" id="histFilterInput" placeholder="Filtrer par client..." oninput="renderHistory()" style="margin-bottom:1rem;">
+      <div id="histList"><div class="empty-state">Aucune facture générée pour l'instant.</div></div>
+    </div>
+  </section>
+
+</main>
+
+<footer>Outil interne de facturation vétérinaire</footer>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" style="display:none;">
+  <div class="modal-box" id="modalBox">
+    <h3 id="modalTitle"></h3>
+    <div id="modalSub" class="modal-sub" style="display:none;"></div>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActionsRow">
+      <button class="btn" id="modalCancel">Annuler</button>
+      <button class="btn primary" id="modalConfirm">Confirmer</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================== ÉTAT GLOBAL ==================== */
+let CLINIC_CODE = null;
+
+let tarifs = [];
+let users = [];
+let clients = [];
+let clinicInfo = { name:"Cabinet Vétérinaire", address:"", phone:"", siret:"", tvaRate:20, logo:"", accentColor:"#1F6F5C", footerText:"", customFields:[] };
+let invoiceCounter = 0;
+let invoiceHistory = [];
+let currentInvoice = null;
+let adminPassword = '1234';
+let adminUnlocked = false;
+let currentUser = null; // {id, name, role} ou null
+
+const DEFAULT_TARIFS = [
+  {name:"Consultation générale", price:35, category:"acte", variants:[]},
+  {name:"Vaccination CHPPI (chien)", price:55, category:"acte", variants:[{label:"Chiot (primo-vaccination)", price:45}]},
+  {name:"Vaccination Typhus-Coryza (chat)", price:50, category:"acte", variants:[{label:"Chaton (primo-vaccination)", price:40}]},
+  {name:"Vermifugation", price:15, category:"acte", variants:[]},
+  {name:"Identification (puce électronique)", price:60, category:"acte", variants:[]},
+  {name:"Stérilisation chatte", price:120, category:"acte", variants:[]},
+  {name:"Castration chat", price:70, category:"acte", variants:[]},
+  {name:"Stérilisation chienne", price:220, category:"acte", variants:[{label:"Grand chien (>25kg)", price:280}]},
+  {name:"Castration chien", price:130, category:"acte", variants:[{label:"Grand chien (>25kg)", price:170}]},
+  {name:"Détartrage dentaire", price:150, category:"acte", variants:[]},
+  {name:"Radiographie", price:80, category:"acte", variants:[]},
+  {name:"Analyse sanguine", price:65, category:"acte", variants:[]},
+  {name:"Pansement / soin de plaie", price:25, category:"acte", variants:[]},
+  {name:"Hospitalisation (par jour)", price:45, category:"acte", variants:[]},
+  {name:"Antiparasitaire externe (pipette)", price:18, category:"medicament", variants:[]},
+  {name:"Anti-inflammatoire (traitement)", price:22, category:"medicament", variants:[]},
+  {name:"Euthanasie", price:90, category:"acte", variants:[]}
+];
+
+function escapeHtml(s){
+  return (s===undefined||s===null?'':String(s))
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtMoney(n){
+  const v = Number(n); return (isNaN(v)?0:v).toFixed(2) + ' €';
+}
+function genId(){
+  try{ return crypto.randomUUID(); }catch(e){ return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2); }
+}
+function variantsToText(variants){
+  if(!variants || !variants.length) return '';
+  return variants.map(v=>`${v.label}:${v.price}`).join('\n');
+}
+function textToVariants(text){
+  if(!text || !text.trim()) return [];
+  return text.split('\n').map(line=>{
+    const idx = line.lastIndexOf(':');
+    if(idx===-1) return null;
+    const label = line.slice(0,idx).trim();
+    const price = parseFloat(line.slice(idx+1).replace(',','.').trim());
+    if(!label || isNaN(price)) return null;
+    return {label, price};
+  }).filter(Boolean);
+}
+function fieldsToText(fields){
+  if(!fields || !fields.length) return '';
+  return fields.map(f=>`${f.label}:${f.value}`).join('\n');
+}
+function textToFields(text){
+  if(!text || !text.trim()) return [];
+  return text.split('\n').map(line=>{
+    const idx = line.indexOf(':');
+    if(idx===-1) return null;
+    const label = line.slice(0,idx).trim();
+    const value = line.slice(idx+1).trim();
+    if(!label || !value) return null;
+    return {label, value};
+  }).filter(Boolean);
+}
+function animalsToText(animals){
+  if(!animals || !animals.length) return '';
+  return animals.map(a=>`${a.name}:${a.species||''}`).join('\n');
+}
+function textToAnimals(text){
+  if(!text || !text.trim()) return [];
+  return text.split('\n').map(line=>{
+    const idx = line.indexOf(':');
+    const name = (idx===-1 ? line : line.slice(0,idx)).trim();
+    const species = idx===-1 ? '' : line.slice(idx+1).trim();
+    if(!name) return null;
+    return {name, species};
+  }).filter(Boolean);
+}
+
+/* ==================== STOCKAGE NAMESPACÉ PAR CODE CLINIQUE ====================
+   Toutes les données de facturation sont stockées en "shared" storage
+   préfixées par le code clinique, pour que tous les appareils utilisant
+   le même code voient les mêmes données. Le code lui-même est mémorisé
+   en stockage personnel (propre à ce compte) pour ne pas avoir à le
+   retaper à chaque ouverture. */
+function ck(key){ return `clinic:${CLINIC_CODE}:${key}`; }
+
+async function apiStorage(action, key, value, prefix){
+  try{
+    const r = await fetch('/api/storage', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({action, key, value, prefix})
+    });
+    if(!r.ok){ console.error('Erreur serveur stockage', await r.text()); return null; }
+    return await r.json();
+  }catch(e){ console.error('Erreur réseau stockage', e); return null; }
+}
+async function csGet(key, fallback){
+  const r = await apiStorage('get', ck(key));
+  if(!r || r.value===null || r.value===undefined) return fallback;
+  try{ return JSON.parse(r.value); }catch(e){ return fallback; }
+}
+async function csSet(key, value){
+  const r = await apiStorage('set', ck(key), JSON.stringify(value));
+  return !!(r && r.ok);
+}
+async function csDelete(key){
+  const r = await apiStorage('delete', ck(key));
+  return !!(r && r.ok);
+}
+
+/* ==================== ONBOARDING : CODE CLINIQUE ==================== */
+function randomClinicCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sans caractères ambigus
+  let out = '';
+  for(let i=0;i<6;i++) out += chars[Math.floor(Math.random()*chars.length)];
+  return out;
+}
+
+async function ensureClinicCode(){
+  try{
+    const saved = localStorage.getItem('device-clinic-code');
+    if(saved){ CLINIC_CODE = saved; return; }
+  }catch(e){ /* pas encore défini */ }
+  CLINIC_CODE = await onboardClinicCode();
+  try{ localStorage.setItem('device-clinic-code', CLINIC_CODE); }catch(e){ /* stockage indisponible */ }
+}
+
+function onboardClinicCode(){
+  return new Promise((resolve)=>{
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').textContent = 'Bienvenue 👋';
+    const sub = document.getElementById('modalSub');
+    sub.style.display='block';
+    sub.textContent = "Pour relier tes appareils (ordinateur, téléphone, collègues) sur les mêmes factures, cette app utilise un code clinique. Crée un nouveau cabinet, ou rejoins un cabinet existant avec le code qu'on t'a donné.";
+    const body = document.getElementById('modalBody');
+    document.getElementById('modalActionsRow').style.display='none';
+
+    function showChoices(){
+      body.innerHTML = `
+        <div class="onboard-choices">
+          <button class="onboard-choice" id="choiceCreate">
+            <div class="t">🆕 Créer un nouveau cabinet</div>
+            <div class="d">Génère un code unique à partager avec ton équipe.</div>
+          </button>
+          <button class="onboard-choice" id="choiceJoin">
+            <div class="t">🔗 Rejoindre un cabinet existant</div>
+            <div class="d">Entre le code que ton/ta collègue t'a communiqué.</div>
+          </button>
+        </div>`;
+      document.getElementById('choiceCreate').onclick = showCreate;
+      document.getElementById('choiceJoin').onclick = showJoin;
+    }
+
+    function showCreate(){
+      const code = randomClinicCode();
+      body.innerHTML = `
+        <div class="clinic-code-box"><span class="code mono">${code}</span></div>
+        <div class="hint" style="margin-top:0.8rem;">Note bien ce code : c'est lui qui permettra à tes autres appareils (et à ton équipe) d'accéder aux mêmes factures. Tu pourras le retrouver dans l'onglet Administration.</div>
+        <div class="modal-actions">
+          <button class="btn" id="btnBack">Retour</button>
+          <button class="btn primary" id="btnStart">C'est noté, commencer</button>
+        </div>`;
+      document.getElementById('btnBack').onclick = showChoices;
+      document.getElementById('btnStart').onclick = ()=>{ overlay.style.display='none'; document.getElementById('modalActionsRow').style.display='flex'; sub.style.display='none'; resolve(code); };
+    }
+
+    function showJoin(){
+      body.innerHTML = `
+        <label>Code du cabinet</label>
+        <input type="text" id="joinCodeInput" placeholder="Ex : A1B2C3" style="text-transform:uppercase;">
+        <div id="joinErr"></div>
+        <div class="modal-actions">
+          <button class="btn" id="btnBack2">Retour</button>
+          <button class="btn primary" id="btnJoin">Rejoindre</button>
+        </div>`;
+      const input = document.getElementById('joinCodeInput');
+      setTimeout(()=>input.focus(), 30);
+      document.getElementById('btnBack2').onclick = showChoices;
+      const doJoin = ()=>{
+        const val = input.value.trim().toUpperCase();
+        if(!val){ document.getElementById('joinErr').innerHTML = '<div class="error-box">Entre un code valide.</div>'; return; }
+        overlay.style.display='none'; document.getElementById('modalActionsRow').style.display='flex'; sub.style.display='none';
+        resolve(val);
+      };
+      document.getElementById('btnJoin').onclick = doJoin;
+      input.onkeydown = (e)=>{ if(e.key==='Enter') doJoin(); };
+    }
+
+    overlay.style.display = 'flex';
+    showChoices();
+  });
+}
+
+async function switchClinicCode(){
+  const result = await openModal({
+    title:'Changer de cabinet',
+    confirmLabel:'Changer',
+    danger:true,
+    fields:[]
+  }, "Cet appareil se déconnectera du cabinet actuel et te redemandera un code clinique au prochain chargement. Les données ne sont pas supprimées, seulement le lien de cet appareil.");
+  if(!result) return;
+  try{ localStorage.removeItem('device-clinic-code'); }catch(e){}
+  showToast("Cabinet dissocié. Rechargement...");
+  setTimeout(()=> location.reload(), 900);
+}
+
+function copyClinicCode(){
+  if(!CLINIC_CODE) return;
+  navigator.clipboard?.writeText(CLINIC_CODE).then(()=>{
+    showToast('Code copié dans le presse-papiers.');
+  }).catch(()=>{
+    showToast('Impossible de copier automatiquement. Code : ' + CLINIC_CODE, 'err');
+  });
+}
+
+/* ==================== MODAL SYSTEM (générique, remplace prompt/alert/confirm) ==================== */
+function renderField(f){
+  const val = f.value===undefined||f.value===null ? '' : f.value;
+  if(f.type==='select'){
+    const opts = (f.options||[]).map(o=>`<option value="${escapeHtml(o.value)}" ${o.value===val?'selected':''}>${escapeHtml(o.label)}</option>`).join('');
+    return `<label>${escapeHtml(f.label)}</label><select id="modalField-${f.id}">${opts}</select>`;
+  }
+  if(f.type==='textarea'){
+    return `<label>${escapeHtml(f.label)}</label><textarea id="modalField-${f.id}" placeholder="${escapeHtml(f.placeholder||'')}" style="min-height:5rem;">${escapeHtml(val)}</textarea>`;
+  }
+  return `<label>${escapeHtml(f.label)}</label><input type="${f.type||'text'}" id="modalField-${f.id}" value="${escapeHtml(val)}" placeholder="${escapeHtml(f.placeholder||'')}">`;
+}
+
+function openModal({title, fields=[], confirmLabel='Confirmer', danger=false}, subtext){
+  return new Promise(resolve=>{
+    const overlay = document.getElementById('modalOverlay');
+    document.getElementById('modalTitle').textContent = title;
+    const sub = document.getElementById('modalSub');
+    if(subtext){ sub.style.display='block'; sub.textContent = subtext; } else { sub.style.display='none'; }
+    const body = document.getElementById('modalBody');
+    body.innerHTML = fields.map(renderField).join('');
+    document.getElementById('modalActionsRow').style.display = 'flex';
+    const confirmBtn = document.getElementById('modalConfirm');
+    const cancelBtn = document.getElementById('modalCancel');
+    confirmBtn.textContent = confirmLabel;
+    confirmBtn.className = 'btn ' + (danger ? 'danger' : 'primary');
+    overlay.style.display = 'flex';
+    setTimeout(()=>{ const first = body.querySelector('input,select,textarea'); if(first) first.focus(); }, 30);
+
+    function cleanup(result){
+      overlay.style.display = 'none';
+      confirmBtn.onclick = null; cancelBtn.onclick = null;
+      overlay.onclick = null; document.onkeydown = null;
+      resolve(result);
+    }
+    confirmBtn.onclick = ()=>{
+      const values = {};
+      fields.forEach(f=>{ const el = document.getElementById('modalField-'+f.id); values[f.id] = el ? el.value.trim() : ''; });
+      cleanup(values);
+    };
+    cancelBtn.onclick = ()=> cleanup(null);
+    overlay.onclick = (e)=>{ if(e.target===overlay) cleanup(null); };
+    document.onkeydown = (e)=>{
+      if(e.key==='Enter' && fields.every(f=>f.type!=='textarea')) confirmBtn.click();
+      if(e.key==='Escape') cancelBtn.click();
+    };
+  });
+}
+function showToast(msg, type){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (type==='err' ? ' err' : '');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(()=> t.classList.remove('show'), 3000);
+}
+
+/* ==================== PERMISSIONS ==================== */
+function currentRole(){
+  if(!users.length) return 'admin'; // pas encore configuré => accès complet
+  return currentUser ? currentUser.role : 'secretaire'; // par défaut, accès minimal si personne n'est sélectionné
+}
+function canAccessAdmin(){ const r = currentRole(); return r==='admin' || r==='veterinaire'; }
+function canManageUsers(){ return currentRole()==='admin'; }
+function canEditInvoices(){ const r = currentRole(); return r==='admin' || r==='veterinaire'; }
+
+function roleLabel(role){
+  return {admin:'Administrateur', veterinaire:'Vétérinaire', secretaire:'Secrétaire'}[role] || role;
+}
+
+/* ==================== SESSION (qui es-tu) ==================== */
+function renderSessionSelect(){
+  const sel = document.getElementById('sessionSelect');
+  if(!users.length){
+    sel.innerHTML = `<option value="">— (accès complet)</option>`;
+    sel.disabled = true;
+    document.getElementById('roleBadge').textContent = 'Admin';
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = `<option value="">— sélectionner —</option>` + users.map(u=>`<option value="${u.id}" ${currentUser && currentUser.id===u.id ? 'selected':''}>${escapeHtml(u.name)}</option>`).join('');
+  document.getElementById('roleBadge').textContent = currentUser ? roleLabel(currentUser.role) : roleLabel('secretaire') + ' (défaut)';
+}
+async function onSessionChange(){
+  const sel = document.getElementById('sessionSelect');
+  const u = users.find(x=>x.id===sel.value);
+  currentUser = u || null;
+  try{ localStorage.setItem('current-user-id-' + CLINIC_CODE, currentUser ? currentUser.id : ''); }catch(e){}
+  renderSessionSelect();
+  applyPermissionsToTabs();
+}
+function applyPermissionsToTabs(){
+  const adminTabBtn = document.querySelector('.tab-btn[data-tab="tarifs"]');
+  adminTabBtn.style.opacity = canAccessAdmin() ? '1' : '0.4';
+  adminTabBtn.title = canAccessAdmin() ? '' : "Réservé aux rôles Administrateur / Vétérinaire";
+}
+
+/* ==================== INIT ==================== */
+async function loadAll(){
+  await ensureClinicCode();
+  document.getElementById('clinicCodeDisplay').textContent = CLINIC_CODE;
+
+  tarifs = await csGet('tarifs-catalogue', null) || DEFAULT_TARIFS.slice();
+  clinicInfo = Object.assign({name:"Cabinet Vétérinaire", address:"", phone:"", siret:"", tvaRate:20, logo:"", accentColor:"#1F6F5C", footerText:"", customFields:[]}, await csGet('clinic-info', {}));
+  users = await csGet('users', []);
+  clients = await csGet('clients', []);
+  invoiceHistory = await csGet('invoice-history', []);
+  invoiceCounter = await csGet('invoice-counter', 0);
+  adminPassword = await csGet('admin-password', '1234');
+
+  try{
+    const uid = localStorage.getItem('current-user-id-' + CLINIC_CODE);
+    if(uid){ currentUser = users.find(u=>u.id===uid) || null; }
+  }catch(e){ currentUser = null; }
+
+  document.getElementById('clinicTitle').textContent = clinicInfo.name;
+  document.getElementById('tvaRate').value = clinicInfo.tvaRate;
+  document.getElementById('accentColor').value = clinicInfo.accentColor || '#1F6F5C';
+  document.getElementById('footerText').value = clinicInfo.footerText || '';
+  document.getElementById('customFieldsText').value = fieldsToText(clinicInfo.customFields);
+  applyAccentColor();
+  renderLogo();
+  renderTarifList();
+  renderUsersList();
+  renderSessionSelect();
+  applyPermissionsToTabs();
+  renderClientDatalist();
+  renderClientsList();
+  renderHistory();
+  renderRappels();
+}
+loadAll();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW non enregistré :', err));
+  });
+}
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    if(btn.dataset.tab === 'tarifs'){
+      if(!canAccessAdmin()){
+        showToast("Ton rôle (" + roleLabel(currentRole()) + ") n'a pas accès à l'Administration.", 'err');
+        return;
+      }
+      if(!adminUnlocked){
+        const result = await openModal({
+          title:'Accès administrateur',
+          fields:[{id:'pwd', label:'Mot de passe', type:'password', placeholder:'••••'}],
+          confirmLabel:'Déverrouiller'
+        });
+        if(!result) return;
+        if(result.pwd !== adminPassword){ showToast('Mot de passe incorrect', 'err'); return; }
+        adminUnlocked = true;
+      }
+    }
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    ['fiche','tarifs','clients','rappels','historique'].forEach(t=>{
+      document.getElementById('tab-'+t).style.display = (t===btn.dataset.tab) ? 'block' : 'none';
+    });
+    if(btn.dataset.tab==='tarifs'){
+      document.getElementById('usersPanel').style.display = canManageUsers() ? 'block' : 'none';
+    }
+    if(btn.dataset.tab==='clients') renderClientsList();
+    if(btn.dataset.tab==='rappels') renderRappels();
+  });
+});
+function lockAdmin(){
+  adminUnlocked = false;
+  document.querySelector('.tab-btn[data-tab="fiche"]').click();
+  showToast("Accès administrateur verrouillé.");
+}
+
+/* ---------- Clinic info + logo ---------- */
+function renderLogo(){
+  const box = document.getElementById('clinicLogoBox');
+  box.innerHTML = clinicInfo.logo ? `<img src="${clinicInfo.logo}" alt="Logo">` : '🐾';
+}
+async function editClinic(){
+  const body = document.createElement('div'); // unused, kept for clarity
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalTitle').textContent = 'Informations du cabinet';
+  document.getElementById('modalSub').style.display='none';
+  const bodyEl = document.getElementById('modalBody');
+  bodyEl.innerHTML = `
+    <label>Nom du cabinet</label>
+    <input type="text" id="ci-name" value="${escapeHtml(clinicInfo.name)}">
+    <label>Adresse</label>
+    <input type="text" id="ci-address" value="${escapeHtml(clinicInfo.address)}">
+    <label>Téléphone</label>
+    <input type="text" id="ci-phone" value="${escapeHtml(clinicInfo.phone)}">
+    <label>SIRET</label>
+    <input type="text" id="ci-siret" value="${escapeHtml(clinicInfo.siret)}">
+    <label>Logo (image, optionnel)</label>
+    <input type="file" id="ci-logo" accept="image/*">
+    <div class="hint">Le logo apparaîtra en haut de chaque facture. Formats acceptés : JPG, PNG.</div>
+  `;
+  document.getElementById('modalActionsRow').style.display='flex';
+  const confirmBtn = document.getElementById('modalConfirm');
+  const cancelBtn = document.getElementById('modalCancel');
+  confirmBtn.textContent = 'Enregistrer';
+  confirmBtn.className = 'btn primary';
+  overlay.style.display = 'flex';
+
+  let newLogo = clinicInfo.logo;
+  document.getElementById('ci-logo').onchange = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 1.5*1024*1024){ showToast('Image trop lourde (max ~1.5 Mo).', 'err'); e.target.value=''; return; }
+    const reader = new FileReader();
+    reader.onload = ()=>{ newLogo = reader.result; showToast('Logo prêt à être enregistré.'); };
+    reader.readAsDataURL(file);
+  };
+
+  await new Promise(resolve=>{
+    function cleanup(save){
+      overlay.style.display='none';
+      confirmBtn.onclick=null; cancelBtn.onclick=null; overlay.onclick=null; document.onkeydown=null;
+      resolve(save);
+    }
+    confirmBtn.onclick = ()=> cleanup(true);
+    cancelBtn.onclick = ()=> cleanup(false);
+    overlay.onclick = (e)=>{ if(e.target===overlay) cleanup(false); };
+    document.onkeydown = (e)=>{ if(e.key==='Escape') cleanup(false); };
+  }).then(async (save)=>{
+    if(!save) return;
+    clinicInfo.name = document.getElementById('ci-name').value.trim() || clinicInfo.name;
+    clinicInfo.address = document.getElementById('ci-address').value.trim();
+    clinicInfo.phone = document.getElementById('ci-phone').value.trim();
+    clinicInfo.siret = document.getElementById('ci-siret').value.trim();
+    clinicInfo.logo = newLogo || '';
+    document.getElementById('clinicTitle').textContent = clinicInfo.name;
+    renderLogo();
+    await saveClinicInfo();
+    showToast("Informations du cabinet enregistrées.");
+  });
+}
+async function saveClinicInfo(){
+  clinicInfo.tvaRate = parseFloat(document.getElementById('tvaRate').value) || 0;
+  await csSet('clinic-info', clinicInfo);
+}
+
+function applyAccentColor(){
+  document.documentElement.style.setProperty('--invoice-accent', clinicInfo.accentColor || '#1F6F5C');
+}
+async function saveInvoiceCustomization(){
+  clinicInfo.accentColor = document.getElementById('accentColor').value || '#1F6F5C';
+  clinicInfo.footerText = document.getElementById('footerText').value.trim();
+  clinicInfo.customFields = textToFields(document.getElementById('customFieldsText').value);
+  applyAccentColor();
+  const ok = await csSet('clinic-info', clinicInfo);
+  if(ok){ showToast('Personnalisation enregistrée.'); if(currentInvoice) renderInvoice(currentInvoice); }
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+}
+
+/* ---------- Clients (répertoire) ---------- */
+function findClientByName(name){
+  const n = (name||'').trim().toLowerCase();
+  if(!n) return null;
+  return clients.find(c=>c.name.trim().toLowerCase()===n) || null;
+}
+async function upsertClientFromInvoice(clientName, animalName, species){
+  if(!clientName || !animalName) return;
+  let client = findClientByName(clientName);
+  let changed = false;
+  if(!client){
+    client = {id: genId(), name: clientName, phone:'', email:'', animals:[]};
+    clients.push(client);
+    changed = true;
+  }
+  const existingAnimal = client.animals.find(a=>a.name.trim().toLowerCase()===animalName.trim().toLowerCase());
+  if(!existingAnimal){
+    client.animals.push({name: animalName, species: species||''});
+    changed = true;
+  } else if(species && !existingAnimal.species){
+    existingAnimal.species = species;
+    changed = true;
+  }
+  if(changed){
+    await csSet('clients', clients);
+    renderClientDatalist();
+    renderClientsList();
+  }
+}
+function renderClientDatalist(){
+  document.getElementById('clientNamesList').innerHTML = clients.map(c=>`<option value="${escapeHtml(c.name)}">`).join('');
+}
+function onClientNameInput(){
+  const val = document.getElementById('clientName').value;
+  const client = findClientByName(val);
+  const dl = document.getElementById('animalNamesList');
+  dl.innerHTML = client ? client.animals.map(a=>`<option value="${escapeHtml(a.name)}">`).join('') : '';
+}
+function onAnimalNameInput(){
+  const clientVal = document.getElementById('clientName').value;
+  const animalVal = document.getElementById('animalName').value;
+  const client = findClientByName(clientVal);
+  if(!client) return;
+  const animal = client.animals.find(a=>a.name.trim().toLowerCase()===animalVal.trim().toLowerCase());
+  if(animal && animal.species){ document.getElementById('animalSpecies').value = animal.species; }
+}
+function renderClientsList(){
+  const wrap = document.getElementById('clientsList');
+  const q = (document.getElementById('clientSearchInput')?.value || '').trim().toLowerCase();
+  let list = clients;
+  if(q){
+    list = clients.filter(c=>
+      c.name.toLowerCase().includes(q) ||
+      c.animals.some(a=>a.name.toLowerCase().includes(q))
+    );
+  }
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state">${clients.length===0 ? "Aucun client pour l'instant — le répertoire se remplit automatiquement dès qu'une facture est générée." : "Aucun résultat pour cette recherche."}</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="client-table">
+      <thead><tr><th>Client</th><th>Animaux</th><th>Contact</th><th></th></tr></thead>
+      <tbody>
+        ${list.map(c=>`
+        <tr>
+          <td>${escapeHtml(c.name)}</td>
+          <td>${c.animals.map(a=>`<span class="animal-chip">${escapeHtml(a.name)}${a.species? ' · '+escapeHtml(a.species):''}</span>`).join('') || '—'}</td>
+          <td>${escapeHtml(c.phone||'')}${c.phone && c.email? ' · ':''}${escapeHtml(c.email||'')}</td>
+          <td class="actions-col">
+            <button class="icon-btn" onclick="openClientModal('${c.id}')" title="Modifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+            <button class="icon-btn" onclick="viewClientInvoices('${escapeHtml(c.name)}')" title="Voir ses factures"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></button>
+            <button class="icon-btn danger" onclick="deleteClient('${c.id}')" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+async function openClientModal(clientId){
+  const editing = !!clientId;
+  const existing = editing ? clients.find(c=>c.id===clientId) : {name:'', phone:'', email:'', animals:[]};
+  if(editing && !existing){ showToast('Client introuvable.', 'err'); return; }
+  const result = await openModal({
+    title: editing ? 'Modifier le client' : 'Ajouter un client',
+    confirmLabel: editing ? 'Enregistrer' : 'Ajouter',
+    fields:[
+      {id:'name', label:'Nom', value:existing.name, placeholder:'Ex : Mme Dupont'},
+      {id:'phone', label:'Téléphone', value:existing.phone, placeholder:'Ex : 06 12 34 56 78'},
+      {id:'email', label:'Email', value:existing.email, placeholder:'Ex : dupont@email.fr'},
+      {id:'animals', label:'Animaux (un par ligne — "Nom:Espèce")', type:'textarea', value:animalsToText(existing.animals), placeholder:"Ex :\nRex:Chien - Labrador\nMinou:Chat"}
+    ]
+  });
+  if(!result) return;
+  const name = result.name.trim();
+  if(!name){ showToast('Le nom est requis.', 'err'); return; }
+  const client = {
+    id: editing ? existing.id : genId(),
+    name, phone: result.phone.trim(), email: result.email.trim(),
+    animals: textToAnimals(result.animals)
+  };
+  if(editing){
+    const idx = clients.findIndex(c=>c.id===client.id);
+    clients[idx] = client;
+  } else {
+    clients.push(client);
+  }
+  renderClientsList();
+  renderClientDatalist();
+  const ok = await csSet('clients', clients);
+  if(ok) showToast(editing ? 'Client mis à jour.' : 'Client ajouté.');
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+}
+async function deleteClient(clientId){
+  const result = await openModal({ title:'Supprimer ce client ?', confirmLabel:'Supprimer', danger:true, fields:[] }, "Les factures déjà émises pour ce client restent dans l'historique.");
+  if(!result) return;
+  clients = clients.filter(c=>c.id!==clientId);
+  renderClientsList();
+  renderClientDatalist();
+  await csSet('clients', clients);
+  showToast('Client supprimé.');
+}
+function viewClientInvoices(clientName){
+  document.getElementById('histFilterInput').value = clientName;
+  document.querySelector('.tab-btn[data-tab="historique"]').click();
+  renderHistory();
+  renderRappels();
+}
+
+/* ---------- Rappels (relances impayés) ---------- */
+function renderRappels(){
+  const wrap = document.getElementById('rappelsList');
+  const unpaid = invoiceHistory
+    .filter(inv=>inv.status==='valide' && (inv.resteDu||0) > 0.01)
+    .sort((a,b)=> new Date(a.date) - new Date(b.date));
+
+  const badge = document.getElementById('rappelsBadge');
+  if(unpaid.length){ badge.style.display='inline-block'; badge.textContent = unpaid.length; }
+  else{ badge.style.display='none'; }
+
+  if(unpaid.length===0){
+    wrap.innerHTML = `<div class="empty-state">Aucune relance à faire pour l'instant.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="hist-table">
+      <thead><tr><th>N°</th><th>Client</th><th>Date</th><th class="num">Reste dû</th><th></th></tr></thead>
+      <tbody>
+        ${unpaid.map(inv=>`
+        <tr>
+          <td class="mono">${escapeHtml(inv.number)}</td>
+          <td>${escapeHtml(inv.client)}</td>
+          <td>${new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+          <td class="num mono">${fmtMoney(inv.resteDu)}</td>
+          <td class="actions-col">
+            <button class="btn sm" onclick="copyReminder('${inv.id}')">Copier relance</button>
+            <button class="btn sm primary" onclick="markInvoicePaid('${inv.id}')">Marquer payée</button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+function copyReminder(invId){
+  const inv = invoiceHistory.find(i=>i.id===invId);
+  if(!inv) return;
+  const msg = `Bonjour ${inv.client},\n\nNous vous rappelons qu'un solde de ${fmtMoney(inv.resteDu)} reste à régler pour la facture ${inv.number} du ${new Date(inv.date).toLocaleDateString('fr-FR')} concernant ${inv.animal}.\n\nMerci de votre compréhension.\n${clinicInfo.name}`;
+  navigator.clipboard?.writeText(msg).then(()=>{
+    showToast('Message de relance copié dans le presse-papiers.');
+  }).catch(()=>{
+    showToast('Impossible de copier automatiquement.', 'err');
+  });
+}
+async function markInvoicePaid(invId){
+  const inv = invoiceHistory.find(i=>i.id===invId);
+  if(!inv) return;
+  inv.acompte = inv.totalTTC;
+  inv.resteDu = 0;
+  inv.history = inv.history || [];
+  inv.history.push({date:new Date().toISOString(), user: currentUser?currentUser.name:'Inconnu', action:'Marquée comme payée'});
+  const idx = invoiceHistory.findIndex(i=>i.id===inv.id);
+  if(idx!==-1) invoiceHistory[idx] = inv;
+  const ok = await csSet('invoice-history', invoiceHistory.slice(0,200));
+  if(ok) showToast('Facture marquée comme payée.');
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+  renderRappels();
+  renderHistory();
+  if(currentInvoice && currentInvoice.id===inv.id) renderInvoice(inv);
+}
+
+/* ---------- Tarifs (admin) ---------- */
+function renderTarifList(){
+  const wrap = document.getElementById('tarifList');
+  if(tarifs.length===0){
+    wrap.innerHTML = `<div class="empty-state">Aucune prestation enregistrée. Ajoute ta première prestation ci-dessous.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="tarif-table">
+      <thead><tr><th>Prestation</th><th class="num">Prix de base</th><th></th></tr></thead>
+      <tbody>
+        ${tarifs.map((t,i)=>`
+        <tr>
+          <td>
+            ${escapeHtml(t.name)} <span class="cat-tag">${t.category==='medicament' ? '· médicament' : '· acte'}</span>
+            ${t.variants && t.variants.length ? `<div class="variant-list">${t.variants.map(v=>`${escapeHtml(v.label)} : ${fmtMoney(v.price)}`).join(' · ')}</div>` : ''}
+          </td>
+          <td class="num mono">${fmtMoney(t.price)}</td>
+          <td class="actions-col">
+            <button class="icon-btn" onclick="openTarifModal(${i})" title="Modifier">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </button>
+            <button class="icon-btn danger" onclick="deleteTarif(${i})" title="Supprimer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+            </button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+async function openTarifModal(index){
+  const editing = typeof index === 'number';
+  const existing = editing ? tarifs[index] : {name:'', price:'', category:'acte', variants:[]};
+  const result = await openModal({
+    title: editing ? 'Modifier la prestation' : 'Ajouter une prestation',
+    confirmLabel: editing ? 'Enregistrer' : 'Ajouter',
+    fields:[
+      {id:'name', label:'Nom de la prestation', value:existing.name, placeholder:'Ex : Consultation générale'},
+      {id:'price', label:'Prix de base (€)', type:'number', value:existing.price, placeholder:'Ex : 35'},
+      {id:'category', label:'Catégorie', type:'select', value:existing.category||'acte', options:[
+        {value:'acte', label:'Acte / soin'},
+        {value:'medicament', label:'Médicament délivré'}
+      ]},
+      {id:'variants', label:'Variantes de prix (optionnel — une par ligne : "Libellé:Prix")', type:'textarea', value:variantsToText(existing.variants), placeholder:"Ex :\nChiot (<6 mois):45\nGrand chien (>25kg):65"}
+    ]
+  });
+  if(!result) return;
+  const name = result.name.trim();
+  const price = parseFloat(result.price.replace(',','.')) || 0;
+  if(!name){ showToast('Le nom de la prestation est requis.', 'err'); return; }
+  const variants = textToVariants(result.variants);
+  const tarif = {name, price, category: result.category==='medicament'?'medicament':'acte', variants};
+  if(editing){ tarifs[index] = tarif; }
+  else{ tarifs.push(tarif); }
+  renderTarifList();
+  await persistTarifs();
+  showToast(editing ? 'Prestation mise à jour.' : 'Prestation ajoutée.');
+}
+async function deleteTarif(index){
+  const result = await openModal({
+    title:'Supprimer cette prestation ?',
+    confirmLabel:'Supprimer',
+    danger:true,
+    fields:[]
+  });
+  if(!result) return;
+  tarifs.splice(index,1);
+  renderTarifList();
+  await persistTarifs();
+  showToast('Prestation supprimée.');
+}
+async function persistTarifs(){
+  const ok = await csSet('tarifs-catalogue', tarifs);
+  if(!ok) showToast("Erreur d'enregistrement, réessaie.", 'err');
+}
+async function changeAdminPassword(){
+  const val = document.getElementById('newAdminPass').value.trim();
+  if(!val){ showToast('Entre un nouveau mot de passe.', 'err'); return; }
+  adminPassword = val;
+  const ok = await csSet('admin-password', adminPassword);
+  if(ok){ showToast('Mot de passe mis à jour.'); document.getElementById('newAdminPass').value = ''; }
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+}
+
+/* ---------- Utilisateurs (admin) ---------- */
+function renderUsersList(){
+  document.getElementById('usersPanel').style.display = canManageUsers() ? 'block' : 'none';
+  const wrap = document.getElementById('usersList');
+  if(users.length===0){
+    wrap.innerHTML = `<div class="empty-state">Aucun utilisateur configuré — accès complet pour tout le monde pour l'instant.</div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="tarif-table">
+      <thead><tr><th>Nom</th><th>Rôle</th><th></th></tr></thead>
+      <tbody>
+        ${users.map((u,i)=>`
+        <tr>
+          <td>${escapeHtml(u.name)}</td>
+          <td>${roleLabel(u.role)}</td>
+          <td class="actions-col">
+            <button class="icon-btn" onclick="openUserModal(${i})" title="Modifier"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
+            <button class="icon-btn danger" onclick="deleteUser(${i})" title="Supprimer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+async function openUserModal(index){
+  const editing = typeof index === 'number';
+  const existing = editing ? users[index] : {name:'', role:'secretaire'};
+  const result = await openModal({
+    title: editing ? "Modifier l'utilisateur" : 'Ajouter un utilisateur',
+    confirmLabel: editing ? 'Enregistrer' : 'Ajouter',
+    fields:[
+      {id:'name', label:'Nom', value:existing.name, placeholder:'Ex : Dr Martin'},
+      {id:'role', label:'Rôle', type:'select', value:existing.role, options:[
+        {value:'admin', label:'Administrateur (accès complet)'},
+        {value:'veterinaire', label:'Vétérinaire (factures + tarifs)'},
+        {value:'secretaire', label:'Secrétaire (factures uniquement)'}
+      ]}
+    ]
+  }, "Ce système n'utilise pas de mot de passe individuel : c'est une liste pratique pour attribuer les factures et limiter l'accès à l'onglet Administration, pas une sécurité forte.");
+  if(!result) return;
+  const name = result.name.trim();
+  if(!name){ showToast('Le nom est requis.', 'err'); return; }
+  const user = {id: editing ? existing.id : genId(), name, role: result.role};
+  if(editing) users[index] = user; else users.push(user);
+  renderUsersList();
+  renderSessionSelect();
+  const ok = await csSet('users', users);
+  if(!ok) showToast("Erreur d'enregistrement, réessaie.", 'err');
+  else showToast(editing ? 'Utilisateur mis à jour.' : 'Utilisateur ajouté.');
+}
+async function deleteUser(index){
+  const result = await openModal({ title:'Supprimer cet utilisateur ?', confirmLabel:'Supprimer', danger:true, fields:[] });
+  if(!result) return;
+  const removed = users[index];
+  users.splice(index,1);
+  if(currentUser && removed && currentUser.id===removed.id) currentUser = null;
+  renderUsersList();
+  renderSessionSelect();
+  applyPermissionsToTabs();
+  await csSet('users', users);
+  showToast('Utilisateur supprimé.');
+}
+
+/* ---------- Voice input ---------- */
+let recognition = null;
+let recording = false;
+function toggleMic(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){
+    document.getElementById('micHint').textContent = "Ton navigateur ne supporte pas la dictée vocale. Utilise Chrome, ou saisis le texte directement.";
+    return;
+  }
+  const btn = document.getElementById('micBtn');
+  if(recording){ recognition.stop(); return; }
+  recognition = new SR();
+  recognition.lang = 'fr-FR';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  const ta = document.getElementById('description');
+  const baseText = ta.value ? ta.value.replace(/\s+$/,'') + ' ' : '';
+  recognition.onstart = ()=>{ recording = true; btn.classList.add('recording'); };
+  recognition.onerror = (e)=>{ document.getElementById('micHint').textContent = "Erreur micro : " + e.error + ". Vérifie l'autorisation du micro."; };
+  recognition.onend = ()=>{ recording = false; btn.classList.remove('recording'); };
+  recognition.onresult = (event)=>{
+    let finalTxt = '';
+    for(let i=0;i<event.results.length;i++){ finalTxt += event.results[i][0].transcript; }
+    ta.value = baseText + finalTxt;
+  };
+  try{ recognition.start(); }catch(e){ document.getElementById('micHint').textContent = "Impossible de démarrer le micro. Réessaie."; }
+}
+
+/* ---------- Génération de facture (IA) ---------- */
+function buildCatalogText(){
+  return tarifs.map(t=>{
+    let line = `- ${t.name} [${t.category==='medicament'?'médicament':'acte'}] : ${t.price}€`;
+    if(t.variants && t.variants.length){
+      line += ' (variantes : ' + t.variants.map(v=>`${v.label} = ${v.price}€`).join(', ') + ')';
+    }
+    return line;
+  }).join('\n');
+}
+
+function extractJsonArray(text){
+  try{ return JSON.parse(text); }catch(e){ /* on tente une extraction plus tolérante */ }
+  const start = text.indexOf('[');
+  const end = text.lastIndexOf(']');
+  if(start!==-1 && end!==-1 && end>start){
+    const slice = text.slice(start, end+1);
+    return JSON.parse(slice);
+  }
+  throw new Error("Réponse de l'IA illisible");
+}
+
+async function generateInvoice(){
+  const client = document.getElementById('clientName').value.trim();
+  const animal = document.getElementById('animalName').value.trim();
+  const species = document.getElementById('animalSpecies').value.trim();
+  const desc = document.getElementById('description').value.trim();
+  const remisePct = Math.min(100, Math.max(0, parseFloat(document.getElementById('remisePct').value) || 0));
+  const acompte = Math.max(0, parseFloat(document.getElementById('acompteVerse').value) || 0);
+  const errBox = document.getElementById('errorBox');
+  errBox.innerHTML = '';
+
+  if(!client || !animal || !desc){
+    errBox.innerHTML = `<div class="error-box">Merci de remplir le propriétaire, le nom de l'animal et la description des actes avant de générer la facture.</div>`;
+    return;
+  }
+  if(tarifs.length===0){
+    errBox.innerHTML = `<div class="error-box">Aucune prestation n'est enregistrée. Ajoute au moins une prestation dans l'onglet Administration.</div>`;
+    return;
+  }
+  if(!navigator.onLine){
+    errBox.innerHTML = `<div class="error-box">Pas de connexion internet détectée. La génération par IA nécessite une connexion.</div>`;
+    return;
+  }
+
+  const btn = document.getElementById('stampBtn');
+  btn.disabled = true;
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = 'Génération en cours...';
+
+  try{
+    const catalogText = buildCatalogText();
+    const prompt = `Tu es un assistant de facturation vétérinaire rigoureux. Voici la grille tarifaire du cabinet (nom, catégorie, prix de base, et éventuelles variantes de prix selon l'âge/la taille/la race) :
+${catalogText}
+
+Informations sur l'animal : espèce/race indiquée = "${species || 'non précisée'}".
+
+Voici la description libre des actes et médicaments réalisés/délivrés, écrite par le vétérinaire :
+"""${desc}"""
+
+Instructions :
+1. Identifie SÉPARÉMENT chaque acte et chaque médicament mentionné, même si plusieurs sont cités dans la même phrase ou la même liste (ex: "vaccin, vermifuge et consultation" = 3 lignes distinctes).
+2. Fais correspondre chaque élément à une prestation de la grille tarifaire quand c'est possible (le nom n'a pas besoin d'être identique mot pour mot).
+3. Si une prestation a des variantes de prix et que l'espèce/race/âge/taille de l'animal correspond à l'une d'entre elles, utilise le prix de cette variante plutôt que le prix de base.
+4. Distingue "categorie": "acte" (soin, consultation, chirurgie...) vs "medicament" (médicament délivré, traitement, pipette...).
+5. Si un élément décrit ne correspond à rien dans la grille, crée une ligne personnalisée avec un prix raisonnable et indique "trouve_dans_tarif": false.
+6. N'invente jamais d'actes qui ne sont pas mentionnés dans la description.
+
+Réponds UNIQUEMENT avec un JSON valide, sans aucun texte avant ou après, sans balises markdown, au format exact suivant :
+[{"designation": "nom de l'acte", "quantite": 1, "prix_unitaire": 35.00, "trouve_dans_tarif": true, "categorie": "acte"}]`;
+
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    if(!response.ok){
+      const errBody = await response.json().catch(()=>({}));
+      throw new Error(errBody.error ? JSON.stringify(errBody.error).slice(0,200) : ('Le service IA a répondu une erreur (' + response.status + ')'));
+    }
+    const data = await response.json();
+    const textBlocks = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n');
+    const clean = textBlocks.replace(/```json|```/g,'').trim();
+    let items = extractJsonArray(clean);
+    if(!Array.isArray(items) || items.length===0) throw new Error("Aucune ligne générée");
+
+    items = items.map(it=>({
+      designation: (it.designation || "Acte").toString().slice(0,200),
+      quantite: Math.max(1, Number(it.quantite)||1),
+      prix_unitaire: Math.max(0, Number(it.prix_unitaire)||0),
+      trouve_dans_tarif: !!it.trouve_dans_tarif,
+      categorie: it.categorie==='medicament' ? 'medicament' : 'acte'
+    }));
+
+    const invoice = computeInvoiceFromItems({
+      client, animal, species, items, remisePct, acompte, tvaRate: clinicInfo.tvaRate
+    });
+
+    invoiceCounter += 1;
+    const year = new Date().getFullYear();
+    invoice.id = genId();
+    invoice.number = `F-${year}-${String(invoiceCounter).padStart(4,'0')}`;
+    invoice.date = new Date().toISOString();
+    invoice.status = 'valide';
+    invoice.createdBy = currentUser ? currentUser.name : null;
+    invoice.history = [{date:new Date().toISOString(), user: currentUser? currentUser.name : 'Inconnu', action:'Création de la facture'}];
+
+    currentInvoice = invoice;
+    renderInvoice(currentInvoice);
+    await csSet('invoice-counter', invoiceCounter);
+    await saveInvoiceToHistory(currentInvoice);
+    await upsertClientFromInvoice(client, animal, species);
+
+  }catch(e){
+    console.error(e);
+    errBox.innerHTML = `<div class="error-box">La génération a échoué (${escapeHtml(e.message||'erreur')}). Réessaie, ou vérifie ta connexion. Aucune facture n'a été enregistrée.</div>`;
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
+
+function computeInvoiceFromItems({client, animal, species, items, remisePct, acompte, tvaRate}){
+  const totalHT = items.reduce((s,it)=>s + it.quantite*it.prix_unitaire, 0);
+  const remiseAmount = totalHT * (remisePct/100);
+  const totalHTApresRemise = totalHT - remiseAmount;
+  const tva = totalHTApresRemise * (tvaRate/100);
+  const totalTTC = totalHTApresRemise + tva;
+  const resteDu = totalTTC - (acompte||0);
+  return {
+    client, animal, species, items,
+    totalHT, remisePct: remisePct||0, remiseAmount, tva, totalTTC, tvaRate,
+    acompte: acompte||0, resteDu
+  };
+}
+
+/* ---------- Affichage facture ---------- */
+function renderInvoice(inv){
+  const panel = document.getElementById('invoicePanel');
+  const dateStr = new Date(inv.date).toLocaleDateString('fr-FR');
+  const rows = inv.items.map((it,idx)=>`
+    <tr>
+      <td>${escapeHtml(it.designation)}${it.trouve_dans_tarif ? '' : ' <span class="off-catalog">(hors grille)</span>'}${it.categorie==='medicament' ? ' <span class="med-tag">(médicament)</span>' : ''}</td>
+      <td class="num mono">${it.quantite}</td>
+      <td class="num mono">${fmtMoney(it.prix_unitaire)}</td>
+      <td class="num mono">${fmtMoney(it.quantite*it.prix_unitaire)}</td>
+    </tr>`).join('');
+
+  const statusMap = {valide:'Valide', annulee:'Annulée', remplacee:'Remplacée', avoir:'Avoir'};
+  const statusTag = `<span class="status-tag status-${inv.status}">${statusMap[inv.status]||inv.status}</span>`;
+
+  const canAct = canEditInvoices() && (inv.status==='valide');
+
+  panel.innerHTML = `
+    <div class="invoice-head">
+      <div class="invoice-head-left">
+        <div class="invoice-logo">${clinicInfo.logo ? `<img src="${clinicInfo.logo}">` : '🐾'}</div>
+        <div>
+          <h2>${escapeHtml(clinicInfo.name)}</h2>
+          <div class="meta">${escapeHtml(clinicInfo.address||'')}${clinicInfo.phone? ' · '+escapeHtml(clinicInfo.phone):''}${clinicInfo.siret? ' · SIRET '+escapeHtml(clinicInfo.siret):''}</div>
+          ${clinicInfo.customFields && clinicInfo.customFields.length ? `<div class="invoice-custom-fields">${clinicInfo.customFields.map(f=>`${escapeHtml(f.label)} : ${escapeHtml(f.value)}`).join(' · ')}</div>` : ''}
+          <div class="meta">Client : <strong>${escapeHtml(inv.client)}</strong> — Animal : <strong>${escapeHtml(inv.animal)}</strong>${inv.species? ' ('+escapeHtml(inv.species)+')':''}</div>
+        </div>
+      </div>
+      <div class="invoice-num">
+        <div class="n mono">${escapeHtml(inv.number)}</div>
+        <div>${dateStr}</div>
+        <div style="margin-top:0.3rem;">${statusTag}</div>
+      </div>
+    </div>
+    <table>
+      <thead><tr><th>Désignation</th><th class="num">Qté</th><th class="num">PU</th><th class="num">Total</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="totals">
+      <div><span>Total HT</span><span class="mono">${fmtMoney(inv.totalHT)}</span></div>
+      ${inv.remisePct>0 ? `<div><span>Remise (${inv.remisePct}%)</span><span class="mono">− ${fmtMoney(inv.remiseAmount)}</span></div>` : ''}
+      <div><span>TVA (${inv.tvaRate}%)</span><span class="mono">${fmtMoney(inv.tva)}</span></div>
+      <div class="ttc"><span>Total TTC</span><span class="mono">${fmtMoney(inv.totalTTC)}</span></div>
+      ${inv.acompte>0 ? `<div><span>Acompte versé</span><span class="mono">− ${fmtMoney(inv.acompte)}</span></div><div class="reste"><span>Reste dû</span><span class="mono">${fmtMoney(inv.resteDu)}</span></div>` : ''}
+    </div>
+    ${clinicInfo.footerText ? `<div class="invoice-footer-note">${escapeHtml(clinicInfo.footerText)}</div>` : ''}
+    <div class="actions-row">
+      <button class="btn primary" onclick="window.print()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimer / Exporter en PDF
+      </button>
+      <button class="btn" onclick="resetFiche()">Nouvelle fiche</button>
+      ${canAct ? `<button class="btn" onclick="startEditInvoice('${inv.id}')">Modifier</button>` : ''}
+      ${canAct ? `<button class="btn danger" onclick="confirmCancelInvoice('${inv.id}')">Annuler la facture</button>` : ''}
+    </div>
+    ${inv.history && inv.history.length ? `<div class="hint" style="margin-top:1rem;">${inv.history.map(h=>`${new Date(h.date).toLocaleString('fr-FR')} — ${escapeHtml(h.action)}${h.user? ' ('+escapeHtml(h.user)+')':''}`).join('<br>')}</div>` : ''}
+  `;
+}
+
+function resetFiche(){
+  document.getElementById('clientName').value='';
+  document.getElementById('animalName').value='';
+  document.getElementById('animalSpecies').value='';
+  document.getElementById('description').value='';
+  document.getElementById('remisePct').value='0';
+  document.getElementById('acompteVerse').value='0';
+  document.getElementById('invoicePanel').innerHTML = `<div class="empty-state">La facture apparaîtra ici une fois générée.</div>`;
+  document.getElementById('errorBox').innerHTML = '';
+  currentInvoice = null;
+}
+
+/* ---------- Modification d'une facture émise ---------- */
+function startEditInvoice(invId){
+  const inv = invoiceHistory.find(i=>i.id===invId) || (currentInvoice && currentInvoice.id===invId ? currentInvoice : null);
+  if(!inv){ showToast('Facture introuvable.', 'err'); return; }
+  if(!canEditInvoices()){ showToast("Ton rôle n'autorise pas la modification des factures.", 'err'); return; }
+  if(inv.status!=='valide'){ showToast('Seule une facture valide peut être modifiée.', 'err'); return; }
+  renderInvoiceEditor(inv);
+}
+
+function renderInvoiceEditor(inv){
+  const panel = document.getElementById('invoicePanel');
+  const rowsHtml = inv.items.map((it,i)=>`
+    <div class="item-edit-row" data-idx="${i}">
+      <input type="text" class="ie-desig" value="${escapeHtml(it.designation)}">
+      <input type="number" class="ie-qte" value="${it.quantite}" min="1">
+      <input type="number" class="ie-pu" value="${it.prix_unitaire}" min="0" step="0.01">
+      <select class="ie-cat">
+        <option value="acte" ${it.categorie==='acte'?'selected':''}>Acte</option>
+        <option value="medicament" ${it.categorie==='medicament'?'selected':''}>Médicament</option>
+      </select>
+      <button class="icon-btn danger" onclick="this.closest('.item-edit-row').remove()" title="Supprimer la ligne">✕</button>
+    </div>`).join('');
+
+  panel.innerHTML = `
+    <div class="section-title">Modifier la facture ${escapeHtml(inv.number)}</div>
+    <div class="section-sub">Cette modification créera une nouvelle version de la facture ; l'originale sera conservée et marquée "Remplacée" pour la traçabilité comptable.</div>
+    <div id="editItemsWrap">${rowsHtml}</div>
+    <button class="btn sm" onclick="addEditRow()">+ Ajouter une ligne</button>
+    <div class="row2" style="margin-top:1rem;">
+      <div><label>Remise (%)</label><input type="number" id="edit-remise" value="${inv.remisePct||0}" min="0" max="100"></div>
+      <div><label>Acompte versé (€)</label><input type="number" id="edit-acompte" value="${inv.acompte||0}" min="0" step="0.01"></div>
+    </div>
+    <div class="actions-row">
+      <button class="btn primary" onclick="saveEditedInvoice('${inv.id}')">Enregistrer les modifications</button>
+      <button class="btn" onclick="renderInvoice(invoiceHistory.find(i=>i.id==='${inv.id}') || currentInvoice)">Annuler l'édition</button>
+    </div>
+  `;
+}
+function addEditRow(){
+  const wrap = document.getElementById('editItemsWrap');
+  const div = document.createElement('div');
+  div.className = 'item-edit-row';
+  div.innerHTML = `
+    <input type="text" class="ie-desig" value="">
+    <input type="number" class="ie-qte" value="1" min="1">
+    <input type="number" class="ie-pu" value="0" min="0" step="0.01">
+    <select class="ie-cat"><option value="acte">Acte</option><option value="medicament">Médicament</option></select>
+    <button class="icon-btn danger" onclick="this.closest('.item-edit-row').remove()" title="Supprimer la ligne">✕</button>`;
+  wrap.appendChild(div);
+}
+async function saveEditedInvoice(originalId){
+  const original = invoiceHistory.find(i=>i.id===originalId);
+  if(!original){ showToast('Facture introuvable.', 'err'); return; }
+  const rows = Array.from(document.querySelectorAll('#editItemsWrap .item-edit-row'));
+  if(rows.length===0){ showToast('Ajoute au moins une ligne.', 'err'); return; }
+  const items = rows.map(r=>({
+    designation: r.querySelector('.ie-desig').value.trim() || 'Acte',
+    quantite: Math.max(1, Number(r.querySelector('.ie-qte').value)||1),
+    prix_unitaire: Math.max(0, Number(r.querySelector('.ie-pu').value)||0),
+    trouve_dans_tarif: true,
+    categorie: r.querySelector('.ie-cat').value
+  }));
+  const remisePct = Math.min(100, Math.max(0, parseFloat(document.getElementById('edit-remise').value)||0));
+  const acompte = Math.max(0, parseFloat(document.getElementById('edit-acompte').value)||0);
+
+  const computed = computeInvoiceFromItems({
+    client: original.client, animal: original.animal, species: original.species,
+    items, remisePct, acompte, tvaRate: original.tvaRate
+  });
+
+  const versionMatch = /-R(\d+)$/.exec(original.number);
+  const nextVersion = versionMatch ? (parseInt(versionMatch[1],10)+1) : 1;
+  const baseNumber = original.number.replace(/-R\d+$/, '');
+
+  const newInvoice = Object.assign({}, computed, {
+    id: genId(),
+    number: `${baseNumber}-R${nextVersion}`,
+    date: new Date().toISOString(),
+    status: 'valide',
+    createdBy: currentUser ? currentUser.name : null,
+    replaces: original.id,
+    history: [
+      ...(original.history||[]),
+      {date:new Date().toISOString(), user: currentUser?currentUser.name:'Inconnu', action:`Modification — remplace ${original.number}`}
+    ]
+  });
+
+  original.status = 'remplacee';
+  original.replacedBy = newInvoice.id;
+  original.history = original.history || [];
+  original.history.push({date:new Date().toISOString(), user: currentUser?currentUser.name:'Inconnu', action:`Remplacée par ${newInvoice.number}`});
+
+  invoiceHistory.unshift(newInvoice);
+  const idxOrig = invoiceHistory.findIndex(i=>i.id===original.id);
+  if(idxOrig!==-1) invoiceHistory[idxOrig] = original;
+
+  currentInvoice = newInvoice;
+  renderInvoice(newInvoice);
+  const ok = await csSet('invoice-history', invoiceHistory.slice(0,200));
+  if(ok) showToast('Facture modifiée. Une nouvelle version a été créée.');
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+  renderHistory();
+  renderRappels();
+}
+
+/* ---------- Annulation / avoir ---------- */
+async function confirmCancelInvoice(invId){
+  if(!canEditInvoices()){ showToast("Ton rôle n'autorise pas l'annulation des factures.", 'err'); return; }
+  const overlay = document.getElementById('modalOverlay');
+  document.getElementById('modalTitle').textContent = 'Annuler cette facture ?';
+  document.getElementById('modalSub').style.display = 'block';
+  document.getElementById('modalSub').textContent = "La facture originale sera conservée (marquée Annulée) pour la traçabilité comptable — elle ne sera jamais supprimée.";
+  document.getElementById('modalBody').innerHTML = `
+    <div class="checkbox-row">
+      <input type="checkbox" id="genAvoirCb" checked>
+      <label style="margin:0;font-weight:500;color:var(--ink);" for="genAvoirCb">Générer un avoir (facture d'annulation à montants négatifs) pour la comptabilité</label>
+    </div>`;
+  document.getElementById('modalActionsRow').style.display = 'flex';
+  const confirmBtn = document.getElementById('modalConfirm');
+  const cancelBtn = document.getElementById('modalCancel');
+  confirmBtn.textContent = 'Annuler la facture';
+  confirmBtn.className = 'btn danger';
+  overlay.style.display = 'flex';
+
+  const genAvoir = await new Promise(resolve=>{
+    function cleanup(v){ overlay.style.display='none'; confirmBtn.onclick=null; cancelBtn.onclick=null; overlay.onclick=null; document.onkeydown=null; resolve(v); }
+    confirmBtn.onclick = ()=> cleanup(document.getElementById('genAvoirCb').checked ? 'yes':'no-checkbox-unchecked');
+    cancelBtn.onclick = ()=> cleanup(null);
+    overlay.onclick = (e)=>{ if(e.target===overlay) cleanup(null); };
+    document.onkeydown = (e)=>{ if(e.key==='Escape') cleanup(null); };
+  });
+  if(genAvoir===null) return;
+  await cancelInvoice(invId, genAvoir==='yes');
+}
+
+async function cancelInvoice(invId, generateAvoir){
+  const inv = invoiceHistory.find(i=>i.id===invId);
+  if(!inv){ showToast('Facture introuvable.', 'err'); return; }
+  inv.status = 'annulee';
+  inv.history = inv.history || [];
+  inv.history.push({date:new Date().toISOString(), user: currentUser?currentUser.name:'Inconnu', action:'Annulée'});
+
+  if(generateAvoir){
+    const avoirItems = inv.items.map(it=>({...it, prix_unitaire: -it.prix_unitaire}));
+    const computed = computeInvoiceFromItems({
+      client: inv.client, animal: inv.animal, species: inv.species,
+      items: avoirItems, remisePct: 0, acompte: 0, tvaRate: inv.tvaRate
+    });
+    const avoir = Object.assign({}, computed, {
+      id: genId(),
+      number: inv.number + '-AVOIR',
+      date: new Date().toISOString(),
+      status: 'avoir',
+      replaces: inv.id,
+      createdBy: currentUser ? currentUser.name : null,
+      history: [{date:new Date().toISOString(), user: currentUser?currentUser.name:'Inconnu', action:`Avoir généré pour l'annulation de ${inv.number}`}]
+    });
+    invoiceHistory.unshift(avoir);
+    currentInvoice = avoir;
+    renderInvoice(avoir);
+  } else {
+    currentInvoice = inv;
+    renderInvoice(inv);
+  }
+
+  const idx = invoiceHistory.findIndex(i=>i.id===inv.id);
+  if(idx!==-1) invoiceHistory[idx] = inv;
+  const ok = await csSet('invoice-history', invoiceHistory.slice(0,200));
+  if(ok) showToast('Facture annulée.' + (generateAvoir ? ' Un avoir a été généré.' : ''));
+  else showToast("Erreur d'enregistrement, réessaie.", 'err');
+  renderHistory();
+  renderRappels();
+}
+
+/* ---------- Historique ---------- */
+async function saveInvoiceToHistory(inv){
+  try{
+    invoiceHistory.unshift(inv);
+    if(invoiceHistory.length>200) invoiceHistory = invoiceHistory.slice(0,200);
+    const ok = await csSet('invoice-history', invoiceHistory);
+    if(!ok) showToast("La facture est affichée mais n'a pas pu être sauvegardée.", 'err');
+    renderHistory();
+    renderRappels();
+  }catch(e){ console.error("Erreur sauvegarde historique", e); }
+}
+function renderHistory(){
+  const wrap = document.getElementById('histList');
+  const q = (document.getElementById('histFilterInput')?.value || '').trim().toLowerCase();
+  const list = q ? invoiceHistory.filter(inv=>inv.client.toLowerCase().includes(q)) : invoiceHistory;
+
+  if(!invoiceHistory || invoiceHistory.length===0){
+    wrap.innerHTML = `<div class="empty-state">Aucune facture générée pour l'instant.</div>`;
+    return;
+  }
+  if(list.length===0){
+    wrap.innerHTML = `<div class="empty-state">Aucune facture pour ce client.</div>`;
+    return;
+  }
+  const statusMap = {valide:'Valide', annulee:'Annulée', remplacee:'Remplacée', avoir:'Avoir'};
+  wrap.innerHTML = `
+    <table class="hist-table">
+      <thead><tr><th>N°</th><th>Client</th><th>Animal</th><th>Date</th><th>Statut</th><th class="num">Total TTC</th></tr></thead>
+      <tbody>
+        ${list.map(inv=>`
+        <tr class="clickable" onclick="openInvoiceFromHistory('${inv.id}')">
+          <td class="mono">${escapeHtml(inv.number)}</td>
+          <td>${escapeHtml(inv.client)}</td>
+          <td>${escapeHtml(inv.animal)}</td>
+          <td>${new Date(inv.date).toLocaleDateString('fr-FR')}</td>
+          <td><span class="status-tag status-${inv.status}">${statusMap[inv.status]||inv.status}</span></td>
+          <td class="num mono">${fmtMoney(inv.totalTTC)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+function openInvoiceFromHistory(id){
+  const inv = invoiceHistory.find(i=>i.id===id);
+  if(!inv) return;
+  currentInvoice = inv;
+  document.querySelector('.tab-btn[data-tab="fiche"]').click();
+  renderInvoice(inv);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function exportCSV(){
+  if(!invoiceHistory.length){ showToast('Aucune facture à exporter.', 'err'); return; }
+  const headers = ['Numero','Date','Client','Animal','Espece','Statut','Total_HT','Remise_pct','TVA','Total_TTC','Acompte','Reste_du','Cree_par'];
+  const escapeCsv = (v)=>{
+    const s = (v===undefined||v===null) ? '' : String(v);
+    return /[",;\n]/.test(s) ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  const lines = [headers.join(';')];
+  invoiceHistory.forEach(inv=>{
+    lines.push([
+      inv.number, new Date(inv.date).toLocaleDateString('fr-FR'), inv.client, inv.animal, inv.species||'',
+      inv.status, inv.totalHT.toFixed(2), inv.remisePct||0, inv.tva.toFixed(2), inv.totalTTC.toFixed(2),
+      (inv.acompte||0).toFixed(2), (inv.resteDu!==undefined ? inv.resteDu.toFixed(2) : inv.totalTTC.toFixed(2)), inv.createdBy||''
+    ].map(escapeCsv).join(';'));
+  });
+  const csv = '\uFEFF' + lines.join('\n'); // BOM pour Excel
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `factures-${clinicInfo.name.replace(/[^a-z0-9]+/gi,'-').toLowerCase()}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
+  showToast('Export CSV téléchargé.');
+}
+
+/* ---------- Robustesse générale ---------- */
+window.addEventListener('error', (e)=>{
+  console.error('Erreur non interceptée :', e.error || e.message);
+});
+window.addEventListener('unhandledrejection', (e)=>{
+  console.error('Promesse rejetée non interceptée :', e.reason);
+});
+</script>
+</body>
+</html>
